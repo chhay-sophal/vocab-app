@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: vocab_postgres
+    environment:
+      POSTGRES_DB: vocab_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret_local_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # 2. Django Backend API Service
+  backend:
+    build: ./backend
+    container_name: vocab_backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_NAME=vocab_db
+      - DB_USER=postgres
+      - DB_PASSWORD=secret_local_password
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DEBUG=1
+    depends_on:
+      - postgres
+
+  # 3. Vue.js Frontend Client Service
+  frontend:
+    build: ./frontend
+    container_name: vocab_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Prevents local node_modules from overriding the container installs
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
